@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>Admin Dashboard & Query Analyzer</h2>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>Total Users</h5>
+                <h2>{{ total_users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5>Total Products</h5>
+                <h2>{{ total_products }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5>Total Orders</h5>
+                <h2>{{ total_orders }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5>Revenue</h5>
+                <h2>${{ "%.2f"|format(revenue) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Index Demo -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Query Performance Demo: Category Index</h5>
+        <p>Current: {% if category_indexed %}✅ Indexed (Faster){% else %}❌ No Index (Slower){% endif %}</p>
+        <a href="{{ url_for('toggle_index') }}" class="btn btn-outline-secondary">Toggle Index</a>
+        <small>Toggle to see slow/fast queries in logs below.</small>
+    </div>
+</div>
+
+<!-- Query Analyzer Table -->
+<h5>Recent Query Logs (Analyzer)</h5>
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Query</th>
+                <th>Time (s)</th>
+                <th>Rows</th>
+                <th>Cache</th>
+                <th>CPU Cycles</th>
+                <th>Memory (KB)</th>
+                <th>Status</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr class="{% if log.is_slow %}table-danger{% else %}table-success{% endif %}">
+                <td>{{ log.query[:30] }}...</td>
+                <td>{{ log.execution_time }}</td>
+                <td>{{ log.rows_affected }}</td>
+                <td>{% if log.cache_hit %}✅ HIT{% else %}❌ MISS{% endif %}</td>
+                <td>{{ log.cpu_cycles|default(0)|intcomma }}</td>
+                <td>{{ (log.memory_usage / 1024)|round(1) }}</td>
+                <td>{% if log.is_slow %}SLOW{% else %}FAST{% endif %}</td>
+                <td>{{ log.timestamp.strftime('%H:%M:%S') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Cache Hit Chart -->
+<div class="row">
+    <div class="col-md-6">
+        <canvas id="cacheChart"></canvas>
+    </div>
+</div>
+
+<script>
+    // Simple chart from logs
+    const ctx = document.getElementById('cacheChart').getContext('2d');
+    const hits = {{ logs|selectattr('cache_hit')|list|length }};
+    const misses = {{ logs|rejectattr('cache_hit')|list|length }};
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Cache Hits', 'Cache Misses'],
+            datasets: [{ data: [hits, misses], backgroundColor: ['#28a745', '#dc3545'] }]
+        }
+    });
+</script>
+{% endblock %}
+

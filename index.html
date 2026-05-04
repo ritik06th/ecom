@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Welcome to E-Shop</h1>
+        <p>Full-stack E-Commerce with Query Performance Analyzer. Login to manage products/cart.</p>
+    </div>
+</div>
+<div class="row mt-4">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.category }} | ${{ product.price }} | Stock: {{ product.stock }}</p>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-primary">Add to Cart</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
